@@ -4,21 +4,47 @@ import { MAX_PAGE_SIZE } from "@/constants/data-fetching";
 
 export function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const userType = searchParams.get("userType");
-  const page = Number(searchParams.get("page")) ?? 1;
+  const userType = searchParams.get("userType") || "all";
+  const page = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("search")?.toLowerCase();
 
-  if (isNaN(page)) {
-    return Response.json({ status: 400, error: "Invalid page number" });
+  console.log("searchParams", searchParams);
+
+  if (isNaN(page) || page < 1) {
+    return new Response(
+      JSON.stringify({ status: 400, error: "Invalid page number" }),
+      { status: 400 }
+    );
   }
 
-  const filteredTickets = tickets
-    .filter((ticket) => {
-      if (userType) {
-        return ticket.userType === userType.toLowerCase();
-      }
-      return true;
-    })
-    .slice((page - 1) * MAX_PAGE_SIZE, page * MAX_PAGE_SIZE);
+  let filteredTickets = tickets;
 
-  return Response.json({ status: 200, data: filteredTickets });
+  if (userType !== "all") {
+    filteredTickets = filteredTickets.filter(
+      (ticket) => ticket.userType.toLowerCase() === userType.toLowerCase()
+    );
+  }
+
+  if (searchQuery) {
+    filteredTickets = filteredTickets.filter(
+      (ticket) =>
+        ticket.title.toLowerCase().includes(searchQuery) ||
+        ticket.description.toLowerCase().includes(searchQuery)
+    );
+    console.log("filteredTickets", filteredTickets);
+  }
+
+  const ticketsCount = filteredTickets.length;
+  const slicedTickets = filteredTickets.slice(
+    (page - 1) * MAX_PAGE_SIZE,
+    page * MAX_PAGE_SIZE
+  );
+
+  return new Response(
+    JSON.stringify({
+      status: 200,
+      data: { tickets: slicedTickets, ticketsCount },
+    }),
+    { status: 200 }
+  );
 }
