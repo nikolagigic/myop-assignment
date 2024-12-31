@@ -24,24 +24,27 @@ export default function PaginatedComponent({
   const searchQuery = searchParams.get("search") ?? "";
 
   const [searchTerm, setSearchTerm] = useState(searchQuery);
+  const [currentUserType, setCurrentUserType] = useState(userType);
   const [currentTickets, setCurrentTickets] = useState<Ticket[]>(tickets);
 
   const nextPageRoute = `/?page=${
     Number(page) + 1
-  }&userType=${userType}&search=${searchQuery}`;
+  }&userType=${currentUserType}&search=${encodeURIComponent(searchTerm)}`;
   const prevPageRoute = `/?page=${
     Number(page) - 1
-  }&userType=${userType}&search=${searchQuery}`;
+  }&userType=${currentUserType}&search=${encodeURIComponent(searchTerm)}`;
   const lastPage = Math.ceil(ticketsCount / MAX_PAGE_SIZE);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       router.push(
-        `/?page=1&userType=${userType}&search=${encodeURIComponent(query)}`
+        `/?page=1&userType=${currentUserType}&search=${encodeURIComponent(
+          query
+        )}`
       );
     }, 500),
-    [router, userType]
+    [router, currentUserType]
   );
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,13 +53,23 @@ export default function PaginatedComponent({
     debouncedSearch(query);
   };
 
+  const handleUserTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedType = event.target.value;
+    setCurrentUserType(selectedType);
+    router.push(
+      `/?page=1&userType=${selectedType}&search=${encodeURIComponent(
+        searchTerm
+      )}`
+    );
+  };
+
   useEffect(() => {
     setCurrentTickets(tickets);
   }, [tickets]);
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex items-center space-x-2 mb-4">
+      <div className="flex flex-col space-y-2 mb-4">
         <input
           type="text"
           className="border rounded-lg p-2 w-full bg-black ring-0 outline-none"
@@ -64,6 +77,39 @@ export default function PaginatedComponent({
           value={searchTerm}
           onChange={handleSearchChange}
         />
+
+        <div className="flex space-x-4">
+          <label className="flex items-center space-x-1">
+            <input
+              type="radio"
+              name="userType"
+              value="all"
+              checked={currentUserType === "all"}
+              onChange={handleUserTypeChange}
+            />
+            <span>All</span>
+          </label>
+          <label className="flex items-center space-x-1">
+            <input
+              type="radio"
+              name="userType"
+              value="local"
+              checked={currentUserType === "local"}
+              onChange={handleUserTypeChange}
+            />
+            <span>Local</span>
+          </label>
+          <label className="flex items-center space-x-1">
+            <input
+              type="radio"
+              name="userType"
+              value="tourist"
+              checked={currentUserType === "tourist"}
+              onChange={handleUserTypeChange}
+            />
+            <span>Tourist</span>
+          </label>
+        </div>
       </div>
 
       {ticketsCount > 0 ? (
@@ -77,7 +123,6 @@ export default function PaginatedComponent({
               ))
             )}
           </div>
-
           <div className="flex space-x-4 items-center">
             <button
               className="rounded-lg border p-1"
