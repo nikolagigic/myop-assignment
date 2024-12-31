@@ -8,8 +8,6 @@ export function GET(request: NextRequest) {
   const page = Number(searchParams.get("page")) || 1;
   const searchQuery = searchParams.get("search")?.toLowerCase();
 
-  console.log("searchParams", searchParams);
-
   if (isNaN(page) || page < 1) {
     return new Response(
       JSON.stringify({ status: 400, error: "Invalid page number" }),
@@ -31,7 +29,6 @@ export function GET(request: NextRequest) {
         ticket.title.toLowerCase().includes(searchQuery) ||
         ticket.description.toLowerCase().includes(searchQuery)
     );
-    console.log("filteredTickets", filteredTickets);
   }
 
   const ticketsCount = filteredTickets.length;
